@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Waldbrände Europa</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <h1>Waldbrände Europa</h1>
+    <div class="sub">Verbrannte Fläche (Hektar) je Land und Jahr · Daten: GWIS/EFFIS (Copernicus, EU-Kommission)</div>
+
+    <div class="controls">
+      <div class="scope-toggle" id="scopeToggle">
+        <button data-scope="land" class="active">Land</button>
+        <button data-scope="europa">Europa</button>
+      </div>
+      <select id="countrySelect"></select>
+    </div>
+    <div class="custom-range">
+      Zeitraum:
+      <input type="number" id="yearFrom" />
+      –
+      <input type="number" id="yearTo" />
+    </div>
+
+    <div class="stat">
+      <div class="value" id="statValue">–</div>
+      <div class="unit">ha</div>
+      <div class="vs-avg" id="statVsAvg"></div>
+    </div>
+    <div class="stat-label" id="statLabel"></div>
+    <div class="stat-sub" id="statSub"></div>
+
+    <div class="chart-wrap">
+      <canvas id="chart"></canvas>
+    </div>
+
+    <div class="info-row">
+      <span id="infoScope"></span>
+      <span id="infoRange"></span>
+    </div>
+
+    <h2>Vergleich</h2>
+    <div class="ranges cmp-ranges">
+      <button data-cmp="year" class="active">Jahr vs. Vorjahr</button>
+      <button data-cmp="decade">Jahrzehnt vs. Vorjahrzehnt</button>
+      <button data-cmp="nyears">Zeitraum frei</button>
+    </div>
+    <div class="cmp-years hidden" id="cmpYearsWrap">
+      Anzahl Jahre: <input type="number" id="cmpYears" min="1" max="15" value="5" />
+      vs. die gleiche Anzahl Jahre davor
+    </div>
+
+    <div class="cmp-stats">
+      <div class="cmp-stat">
+        <div class="value" id="cmpCurrentValue">–</div>
+        <div class="unit">ha</div>
+        <div class="cmp-label" id="cmpCurrentLabel"></div>
+      </div>
+      <div class="cmp-delta" id="cmpDelta">–</div>
+      <div class="cmp-stat">
+        <div class="value" id="cmpPriorValue">–</div>
+        <div class="unit">ha</div>
+        <div class="cmp-label" id="cmpPriorLabel"></div>
+      </div>
+    </div>
+
+    <div class="cmp-extra-toggle-row">
+      <button id="cmpExtraToggle" class="cmp-extra-toggle">+ weitere Jahre vergleichen</button>
+    </div>
+    <div class="cmp-extra-panel hidden" id="cmpExtraPanel">
+      <div class="cmp-extra-label" id="cmpExtraLabel"></div>
+      <div class="cmp-extra-pills" id="cmpExtraPills"></div>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="compareChart"></canvas>
+    </div>
+    <div class="coverage-note hidden" id="cmpCoverageNote"></div>
+
+    <div class="table-wrap">
+      <table id="compareTable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <footer id="footerInfo"></footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
