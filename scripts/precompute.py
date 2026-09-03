@@ -4,7 +4,14 @@ Waldbrand-Dashboard - precompute.py
 Laedt jaehrliche Waldbrandflaechen (Hektar) je europaeischem Land vom GWIS/
 EFFIS-Dienst der EU-Kommission (Copernicus Emergency Management Service,
 kein API-Key noetig). Ein Request pro Jahr liefert alle Laender auf einmal.
-Datenhistorie beginnt 2012 (frueher liefert der Dienst nichts).
+
+Zwei API-Modi werden kombiniert:
+- scope=gwis: alle 53 Laender, aber erst ab 2012
+- scope=effis: nur eine Teilmenge (v.a. feuergefaehrdete Mittelmeer-/Balkan-
+  Laender), dafuer bis 2000 zurueck
+Fuer 2000-2011 wird effis genutzt (wo verfuegbar), ab 2012 gwis (offizielle,
+vollstaendige Abdeckung). Vor 2000 liefert keiner der beiden Modi Daten -
+das ist die harte Grenze des Dienstes, nicht einstellbar.
 
 Schreibt statische JSON-Dateien nach docs/data/, die das Frontend per
 fetch() laedt. Kein Server noetig (siehe skill_static_dashboard Pattern).
@@ -25,8 +32,9 @@ except ImportError:
 sys.path.insert(0, str(Path(__file__).parent))
 from countries_eu import COUNTRIES_DE
 
-API_URL = "https://api2.effis.emergency.copernicus.eu/statistics/v2/gwis/estimatesoverview"
-YEAR_START = 2012  # vor 2012 liefert der Dienst keine Daten
+API_URL_TMPL = "https://api2.effis.emergency.copernicus.eu/statistics/v2/{scope}/estimatesoverview"
+YEAR_START = 2000     # vor 2000 liefert keiner der beiden API-Modi Daten
+GWIS_FROM = 2012       # ab hier: vollstaendige 53-Laender-Abdeckung (scope=gwis)
 
 OUT_DIR = Path(__file__).parent.parent / "docs" / "data"
 UA = {"User-Agent": "waldbrand-dashboard/1.0 (+https://github.com/kopitiful)"}
@@ -39,7 +47,8 @@ def fetch(url, timeout=30):
 
 
 def fetch_year(year, codes):
-    url = f"{API_URL}?countries={','.join(codes)}&year={year}"
+    scope = "gwis" if year >= GWIS_FROM else "effis"
+    url = f"{API_URL_TMPL.format(scope=scope)}?countries={','.join(codes)}&year={year}"
     return json.loads(fetch(url, timeout=45).decode("utf-8"))
 
 
@@ -62,8 +71,8 @@ def main():
             continue
         for row in rows:
             iso3 = row.get("iso3")
-            if iso3 not in COUNTRIES_DE:
-                continue
+            if iso3 not in COUNTRIES_DE or row.get("ba") is None:
+                continue  # effis liefert Platzhalterzeilen (ba=null) fuer nicht abgedeckte Laender/Jahre
             yearly[iso3][year] = {
                 "ba": row.get("ba"),
                 "nf": row.get("nf"),

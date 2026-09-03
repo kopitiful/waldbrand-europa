@@ -66,7 +66,7 @@ function periodSeries(dataKey, fromYear, toYear) {
     if (v !== null) { total = (total || 0) + v; validCount++; }
   }
   const span = toYear - fromYear + 1;
-  return { values, total, coverage: span > 0 ? validCount / span : 0, span };
+  return { values, total, coverage: span > 0 ? validCount / span : 0, span, validCount };
 }
 
 function fmtNum(v) {
@@ -102,13 +102,16 @@ function render() {
   const ba = periodSeries("burnt_area", from, to);
   const nf = periodSeries("n_fires", from, to);
   const avgPerYear = valueForYear("burnt_area_avg", to) ?? valueForYear("burnt_area_avg", from);
-  const avgTotal = avgPerYear !== null ? avgPerYear * ba.span : null;
+  // Referenz nur ueber tatsaechlich abgedeckte Jahre hochrechnen, nicht ueber
+  // die volle Zeitraum-Spanne - sonst taeuschen Datenluecken (z.B. DE vor 2012)
+  // einen falschen Abstand zum langjaehrigen Mittel vor.
+  const avgTotal = avgPerYear !== null && ba.validCount > 0 ? avgPerYear * ba.validCount : null;
 
   statValue.textContent = fmtNum(ba.total);
   statLabel.textContent = `${scopeLabel()} · ${from === to ? from : `${from}–${to}`}`;
   statSub.textContent = nf.total !== null ? `${fmtNum(nf.total)} Brände registriert` : "";
 
-  if (ba.total !== null && avgTotal) {
+  if (ba.total !== null && avgTotal && ba.coverage >= 0.5) {
     const pct = ((ba.total - avgTotal) / avgTotal) * 100;
     statVsAvg.textContent = `${fmtPct(pct)} ggü. Ø`;
   } else {
@@ -118,8 +121,11 @@ function render() {
   const labels = [];
   for (let y = from; y <= to; y++) labels.push(String(y));
 
+  const coveragePct = Math.round(ba.coverage * 100);
   infoScope.textContent = state.scope === "europa" ? `${db.meta.n_countries - 1} Länder summiert (ohne Russland)` : "1 Land";
-  infoRange.textContent = `Datenstand: ${db.meta.year_end} · Quelle: GWIS/EFFIS`;
+  infoRange.textContent = ba.coverage < 0.98
+    ? `Datenstand: ${db.meta.year_end} · Datenabdeckung im Zeitraum: ${coveragePct}%`
+    : `Datenstand: ${db.meta.year_end} · Quelle: GWIS/EFFIS`;
 
   drawChart(labels, ba.values, avgPerYear);
 }
